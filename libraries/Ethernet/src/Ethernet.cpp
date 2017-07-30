@@ -2,7 +2,6 @@
 
 extern "C" {
 	#include "WiFiGeneric.h"
-	//void tcpipInit();
 };
 
 
@@ -20,23 +19,6 @@ static void ethernet_config_gpio(void){
     phy_rmii_configure_data_interface_pins();
     // MDC is GPIO 23, MDIO is GPIO 18
     phy_rmii_smi_configure_pins(PIN_SMI_MDC, PIN_SMI_MDIO);
-}
-
-void tcpipInit();
-
-int EthernetClass::begin()
-{
-	eth_config.phy_addr = ETH_PHY_ADDR;
-    eth_config.gpio_config = ethernet_config_gpio;
-    eth_config.tcpip_input = tcpip_adapter_eth_input;
-    //eth_config.phy_power_enable = ethernet_power_enable;
-    tcpipInit();
-    esp_err_t err = esp_eth_init(&eth_config);
-    if(!err){
-        err = esp_eth_enable();
-		return 1;
-    }
-	return 0;
 }
 
 int EthernetClass::config(IPAddress local_ip, IPAddress subnet, IPAddress gateway)
@@ -62,6 +44,26 @@ int EthernetClass::config(IPAddress local_ip, IPAddress subnet, IPAddress gatewa
     }
 	
 	return 1;
+}
+
+int EthernetClass::begin()
+{
+	// connect the callback function
+	esp_event_loop_init(&WiFiGenericClass::_eventCallback, NULL);
+
+	// init the TCP/IP adapter
+	tcpip_adapter_init();
+	
+	eth_config.phy_addr = ETH_PHY_ADDR;
+    eth_config.gpio_config = ethernet_config_gpio;
+    eth_config.tcpip_input = tcpip_adapter_eth_input;
+    //eth_config.phy_power_enable = ethernet_power_enable;
+    esp_err_t err = esp_eth_init(&eth_config);
+    if(!err){
+        err = esp_eth_enable();
+		return 1;
+    }
+	return 0;
 }
 
 int EthernetClass::begin(IPAddress local_ip, IPAddress subnet, IPAddress gateway)
